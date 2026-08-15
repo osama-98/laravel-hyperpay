@@ -96,15 +96,16 @@ the request rather than retrying.
 
 | Field | Example | Meaning |
 |-------|---------|---------|
-| `payload.ndc` | `BCD73AE29EB92889E76CDCCB24C72819.uat01-vm-tx04` | Checkout-scoped identifier — matches the `checkoutId` you created |
-| `payload.id` | `8ac7a4a19d9a4512019d9a9d52f3056a` | HyperPay's internal transaction ID |
+| `payload.ndc` | `A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6.example-node` | Checkout-scoped identifier — matches the `checkoutId` you created |
+| `payload.id` | `8ac7a4a1000000010000000200000003` | HyperPay's internal transaction ID |
 
 Look up your local record by `ndc`, not `id`. Both stay constant across the PENDING and SUCCESS
 webhooks for the same transaction, which is what makes idempotent handling work.
 
-## Observed production payloads
+## Observed payloads
 
-Real decrypted payloads for a checkout with a standing instruction (INITIAL / CIT).
+Decrypted payloads from a real checkout with a standing instruction (INITIAL / CIT), captured in
+test mode with identifiers replaced by synthetic ones.
 
 ### 1. PENDING (`000.200.000`) — arrives right after the 3DS redirect
 
@@ -112,21 +113,21 @@ Real decrypted payloads for a checkout with a standing instruction (INITIAL / CI
 {
   "type": "PAYMENT",
   "payload": {
-    "id": "8ac7a4a19d9a4512019d9a9d52f3056a",
-    "registrationId": "8ac7a49f9d9a4562019d9a9d525300de",
+    "id": "8ac7a4a1000000010000000200000003",
+    "registrationId": "8ac7a49f000000010000000200000004",
     "paymentType": "DB",
     "paymentBrand": "VISA",
     "amount": "287.88",
-    "currency": "JOD",
-    "merchantTransactionId": "00000047",
+    "currency": "SAR",
+    "merchantTransactionId": "00001234",
     "recurringType": "INITIAL",
     "result": { "code": "000.200.000", "description": "transaction pending" },
     "card": {
-      "bin": "411111", "last4Digits": "1111", "holder": "sss",
+      "bin": "411111", "last4Digits": "1111", "holder": "Jane Jones",
       "expiryMonth": "01", "expiryYear": "2039", "type": "DEBIT", "country": "PL"
     },
     "customParameters": {
-      "recurringPaymentAgreement": "ZHbentARLpND",
+      "recurringPaymentAgreement": "aB3dE6gH9jK2",
       "StoredCredentialType": "CIT"
     },
     "standingInstruction": {
@@ -134,7 +135,7 @@ Real decrypted payloads for a checkout with a standing instruction (INITIAL / CI
       "expiry": "2029-04-17", "frequency": "9999",
       "numberOfInstallments": "1", "recurringType": "STANDING_ORDER"
     },
-    "ndc": "BCD73AE29EB92889E76CDCCB24C72819.uat01-vm-tx04",
+    "ndc": "A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6.example-node",
     "timestamp": "2026-04-17 08:44:56+0000"
   }
 }
@@ -148,30 +149,30 @@ No `standingInstruction.initialTransactionId` yet — do not persist a card from
 {
   "type": "PAYMENT",
   "payload": {
-    "id": "8ac7a4a19d9a4512019d9a9d52f3056a",
-    "registrationId": "8ac7a49f9d9a4562019d9a9d525300de",
+    "id": "8ac7a4a1000000010000000200000003",
+    "registrationId": "8ac7a49f000000010000000200000004",
     "paymentType": "DB",
     "paymentBrand": "VISA",
     "amount": "287.88",
-    "currency": "JOD",
-    "merchantTransactionId": "00000047",
+    "currency": "SAR",
+    "merchantTransactionId": "00001234",
     "recurringType": "INITIAL",
     "result": {
       "code": "000.100.112",
       "description": "Request successfully processed in 'Merchant in Connector Test Mode'"
     },
     "resultDetails": {
-      "ConnectorTxID1": "8ac7a4a19d9a4512019d9a9d52f3056a",
-      "ConnectorTxID2": "9712.4401.6820",
+      "ConnectorTxID1": "8ac7a4a1000000010000000200000003",
+      "ConnectorTxID2": "1000.2000.3000",
       "CardholderInitiatedTransactionID": "123456789012345",
       "3ds.acsEci": "05"
     },
     "card": {
-      "bin": "411111", "last4Digits": "1111", "holder": "sss",
+      "bin": "411111", "last4Digits": "1111", "holder": "Jane Jones",
       "expiryMonth": "01", "expiryYear": "2039", "type": "DEBIT", "country": "PL"
     },
     "customParameters": {
-      "recurringPaymentAgreement": "ZHbentARLpND",
+      "recurringPaymentAgreement": "aB3dE6gH9jK2",
       "StoredCredentialType": "CIT"
     },
     "standingInstruction": {
@@ -180,7 +181,7 @@ No `standingInstruction.initialTransactionId` yet — do not persist a card from
       "expiry": "2029-04-17", "frequency": "9999",
       "numberOfInstallments": "1", "recurringType": "STANDING_ORDER"
     },
-    "ndc": "BCD73AE29EB92889E76CDCCB24C72819.uat01-vm-tx04",
+    "ndc": "A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6.example-node",
     "timestamp": "2026-04-17 08:45:03+0000"
   }
 }

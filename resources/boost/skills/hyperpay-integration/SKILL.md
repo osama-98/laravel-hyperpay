@@ -3,7 +3,7 @@ name: hyperpay-integration
 description: "Build a HyperPay (OPPWA) payment integration in a Laravel application: prepare-checkout and the COPYandPAY widget, verifying the result, saving cards as registration tokens, merchant-initiated charges for subscriptions and installments, and the encrypted webhook. Activate when adding HyperPay to a Laravel app, or when the user mentions HyperPay, COPYandPAY, oppwa, registration token, standing instruction, MIT charge, or a HyperPay webhook."
 license: MIT
 metadata:
-  author: mksoob
+  author: osama-98
 ---
 
 # HyperPay Integration for Laravel

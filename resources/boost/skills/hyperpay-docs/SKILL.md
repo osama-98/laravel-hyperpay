@@ -3,7 +3,7 @@ name: hyperpay-docs
 description: "HyperPay (OPPWA) API reference documentation. Use this skill when you need to look up HyperPay endpoints, API parameters, result codes, standing instruction / card-on-file fields, backoffice operations (capture, refund, reversal), registration tokens, subscriptions and scheduling, webhook payload structure, widget options, or test cards — without fetching the live docs."
 license: MIT
 metadata:
-  author: mksoob
+  author: osama-98
 ---
 
 # HyperPay API Reference
