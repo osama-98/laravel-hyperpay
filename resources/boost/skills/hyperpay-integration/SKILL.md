@@ -17,20 +17,20 @@ Put HyperPay under its own config file rather than `config/services.php`; the in
 enough keys that it earns one.
 
 ```php
-// config/payments.php
+// config/hyperpay.php
 return [
-    'hyperpay' => [
-        'env' => env('HYPERPAY_ENV', 'testing'),
-        'url' => env('HYPERPAY_URL', 'https://eu-test.oppwa.com'),
-        'access_token' => env('HYPERPAY_ACCESS_TOKEN'),
-        'entity_id' => env('HYPERPAY_ENTITY_ID'),
-        'recurring_entity_id' => env('HYPERPAY_RECURRING_ENTITY_ID'),
-        'integrity_enabled' => env('HYPERPAY_INTEGRITY_ENABLED', true),
-        'default_currency' => env('HYPERPAY_DEFAULT_CURRENCY', 'SAR'),
-        'webhook_secret' => env('HYPERPAY_WEBHOOK_SECRET'),
-    ],
+    'env' => env('HYPERPAY_ENV', 'testing'),
+    'url' => env('HYPERPAY_URL', 'https://eu-test.oppwa.com'),
+    'access_token' => env('HYPERPAY_ACCESS_TOKEN'),
+    'entity_id' => env('HYPERPAY_ENTITY_ID'),
+    'recurring_entity_id' => env('HYPERPAY_RECURRING_ENTITY_ID'),
+    'integrity_enabled' => env('HYPERPAY_INTEGRITY_ENABLED', true),
+    'default_currency' => env('HYPERPAY_DEFAULT_CURRENCY', 'SAR'),
+    'webhook_secret' => env('HYPERPAY_WEBHOOK_SECRET'),
 ];
 ```
+
+Read values as `config('hyperpay.url')`, `config('hyperpay.entity_id')`, and so on.
 
 **Two entity IDs are not optional.** HyperPay issues a separate channel for customer-initiated
 checkout and for merchant-initiated recurring charges. Sending the checkout entity on an MIT charge
@@ -63,8 +63,8 @@ enum to an implementation. Adding a provider then costs one class.
 ### Prepare
 
 ```php
-$response = Http::baseUrl(config('payments.hyperpay.url'))
-    ->withToken(config('payments.hyperpay.access_token'))
+$response = Http::baseUrl(config('hyperpay.url'))
+    ->withToken(config('hyperpay.access_token'))
     ->asForm()
     ->post('v1/checkouts', $payload);
 ```
@@ -72,7 +72,7 @@ $response = Http::baseUrl(config('payments.hyperpay.url'))
 Payload essentials for a checkout that also saves the card:
 
 ```php
-'entityId'                                    => config('payments.hyperpay.entity_id'),
+'entityId'                                    => config('hyperpay.entity_id'),
 'amount'                                      => number_format($amount, 2, thousands_separator: ''),
 'currency'                                    => $currency,
 'paymentType'                                 => 'DB',
@@ -109,7 +109,7 @@ Checkout IDs expire after 30 minutes — prune abandoned draft transactions on t
 `POST /v1/registrations/{registrationId}/payments` with the **recurring** entity ID:
 
 ```php
-'entityId'                                    => config('payments.hyperpay.recurring_entity_id'),
+'entityId'                                    => config('hyperpay.recurring_entity_id'),
 'amount'                                      => $amount,
 'currency'                                    => $currency,
 'paymentType'                                 => 'DB',
@@ -180,7 +180,7 @@ Rules that matter:
 $decrypted = openssl_decrypt(
     hex2bin($hexBody),
     'aes-256-gcm',
-    hex2bin(config('payments.hyperpay.webhook_secret')), // 64 hex chars → 32 bytes
+    hex2bin(config('hyperpay.webhook_secret')), // 64 hex chars → 32 bytes
     OPENSSL_RAW_DATA,
     hex2bin($hexIv),
     hex2bin($hexAuthTag),
