@@ -38,18 +38,41 @@ re-test in production. Self-signed certificates are rejected.
 
 ## Decryption
 
+Both wrapper settings hit the same endpoint, so the ciphertext has to be extracted before anything
+touches hex, and every hex string has to be validated before conversion.
+
 ```php
-$iv      = hex2bin(request()->header('X-Initialization-Vector'));
-$authTag = hex2bin(request()->header('X-Authentication-Tag'));
-$key     = hex2bin($webhookSecretKey);       // 64-char hex → 32 bytes
-$cipher  = hex2bin(request()->getContent()); // or json_decode(...)['encryptedBody']
+$body      = request()->getContent();
+$json      = json_decode($body, true);
+$hexCipher = is_array($json) && isset($json['encryptedBody']) ? $json['encryptedBody'] : $body;
+
+$bin = static fn (string $hex): ?string =>
+    $hex !== '' && strlen($hex) % 2 === 0 && ctype_xdigit($hex) ? hex2bin($hex) : null;
+
+$cipher  = $bin($hexCipher);
+$key     = $bin($webhookSecretKey);                                  // 64-char hex → 32 bytes
+$iv      = $bin(request()->header('X-Initialization-Vector', ''));
+$authTag = $bin(request()->header('X-Authentication-Tag', ''));
+
+if ($cipher === null || $key === null || $iv === null || $authTag === null) {
+    return response()->make('invalid hex');   // still 2xx — this delivery can never succeed
+}
 
 $decrypted = openssl_decrypt($cipher, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $authTag);
 $payload   = json_decode($decrypted, true);
 ```
 
-`openssl_decrypt` validates the auth tag; a `false` return means tampering or a wrong key — reject
-the request rather than retrying.
+**Never pass `hex2bin()` straight into `openssl_decrypt()`.** `hex2bin()` returns `false` on non-hex
+input, and under `declare(strict_types=1)` — the default in Laravel apps — handing `false` to a
+`string` parameter of `openssl_decrypt()` raises a `TypeError`. That escapes as an HTTP **500**,
+which contradicts the always-2xx rule below and buys the full 30-day retry ladder for a delivery
+that will never succeed. Malformed input is a 2xx with a diagnostic body, never a 500.
+
+Two real inputs reach that path: a JSON-wrapped delivery (whose body is JSON, not hex) and any
+truncated or malformed body or header.
+
+`openssl_decrypt` validates the auth tag; a `false` return means tampering or a wrong key — log and
+drop the request rather than retrying, and still answer 2xx.
 
 ## Payload structure
 

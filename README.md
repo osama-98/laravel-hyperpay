@@ -28,7 +28,8 @@ them to your configured agents. Run `boost:update` after upgrading the package.
 
 `core.blade.php` — the short list of constraints that are expensive to get wrong: base URLs, the two
 separate entity IDs, prefix-matched result codes, `ndc` vs `id` on webhooks, the always-2xx-in-30s
-webhook rule, checkout expiry, and how test mode must be injected.
+webhook rule (malformed input included — never a 500), checkout expiry, and the two-signal gate on
+test-mode injection.
 
 ### Skills (loaded on demand)
 

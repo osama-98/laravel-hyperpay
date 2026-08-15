@@ -36,8 +36,26 @@ Read values as `config('hyperpay.url')`, `config('hyperpay.entity_id')`, and so 
 checkout and for merchant-initiated recurring charges. Sending the checkout entity on an MIT charge
 is rejected.
 
-Guard the environment flag: anything other than `production` should inject `testMode=EXTERNAL`, and
-that injection must be impossible to leak into live traffic.
+Guard the environment flag with **two independent signals**, so one mistyped variable on deploy is
+not enough to put `testMode=EXTERNAL` on live charges:
+
+```php
+protected function isTestMode(): bool
+{
+    return config('hyperpay.env') !== 'production' && ! app()->isProduction();
+}
+
+// in the payload builder
+if ($this->isTestMode()) {
+    $payload['testMode'] = 'EXTERNAL';
+    $payload['customParameters[3DS2_enrolled]'] = 'true';
+}
+```
+
+`config('hyperpay.env')` covers a HyperPay-specific override; `app()->isProduction()` reads
+`APP_ENV`, which is already correct on every live host. Both must agree before test parameters are
+injected — and both default to the safe side, since an unset `HYPERPAY_ENV` yields `testing` only
+where `APP_ENV` is also non-production.
 
 ## Layering
 
@@ -146,7 +164,7 @@ produces a webhook.
 public function handle(Request $request): Response
 {
     $payload = $this->decryptor->decrypt(
-        hexBody: $request->getContent(),
+        body: $request->getContent(),   // raw hex, or JSON with an `encryptedBody` key
         hexIv: $request->header('X-Initialization-Vector', ''),
         hexAuthTag: $request->header('X-Authentication-Tag', ''),
     );
@@ -176,19 +194,36 @@ Rules that matter:
 
 ### Decryption
 
+The portal's wrapper setting decides whether the body is raw hex or JSON, and both shapes arrive at
+the same route. Resolve the ciphertext first, then validate every hex string before converting it.
+
 ```php
-$decrypted = openssl_decrypt(
-    hex2bin($hexBody),
-    'aes-256-gcm',
-    hex2bin(config('hyperpay.webhook_secret')), // 64 hex chars → 32 bytes
-    OPENSSL_RAW_DATA,
-    hex2bin($hexIv),
-    hex2bin($hexAuthTag),
-);
+$json      = json_decode($body, true);
+$hexCipher = is_array($json) && isset($json['encryptedBody']) ? $json['encryptedBody'] : $body;
+
+$bin = static fn (string $hex): ?string =>
+    $hex !== '' && strlen($hex) % 2 === 0 && ctype_xdigit($hex) ? hex2bin($hex) : null;
+
+$cipher  = $bin($hexCipher);
+$key     = $bin(config('hyperpay.webhook_secret')); // 64 hex chars → 32 bytes
+$iv      = $bin($hexIv);
+$authTag = $bin($hexAuthTag);
+
+if ($cipher === null || $key === null || $iv === null || $authTag === null) {
+    return null;   // caller answers 2xx with a diagnostic body — never a 500
+}
+
+$decrypted = openssl_decrypt($cipher, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $authTag);
 ```
 
-A `false` return means a wrong key or a tampered body — log and drop it, never retry.
-JSON-wrapped webhooks put the ciphertext in `encryptedBody` instead of the raw body.
+**Do not feed `hex2bin()` directly into `openssl_decrypt()`.** `hex2bin()` returns `false` on
+non-hex input, and under `declare(strict_types=1)` passing `false` to a `string` parameter throws a
+`TypeError` — the endpoint returns **500** and earns 30 days of retries for a delivery that can
+never succeed. A JSON-wrapped delivery is exactly such an input: its body is JSON, not hex.
+Malformed input must return 2xx, never a 500.
+
+A `false` return from `openssl_decrypt` means a wrong key or a tampered body — log and drop it,
+never retry, and still answer 2xx.
 
 ## Result codes
 
@@ -209,4 +244,10 @@ into "retriable" burns scheme fees.
 - Fake the HTTP client (`Http::fake()`) for unit tests; assert on the outgoing payload, which is
   where standing-instruction bugs hide.
 - Webhook tests should encrypt a fixture payload with a known key and post it with the two hex
-  headers, so the decryptor is covered rather than bypassed.
+  headers, so the decryptor is covered rather than bypassed. Cover at least:
+  - a raw-hex delivery and a JSON-wrapped `{"encryptedBody": …}` delivery — both must return 2xx
+  - a non-hex body and non-hex headers — 2xx, never a 500 (this is the `strict_types` `TypeError`)
+  - the PENDING webhook that precedes SUCCESS — must not fulfill and must not store a card
+  - a redelivered SUCCESS — one transaction, one stored card, one entitlement
+- Assert the payload builder omits `testMode` when `APP_ENV=production`, even with
+  `HYPERPAY_ENV` mistyped to something non-production.
