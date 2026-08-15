@@ -32,7 +32,7 @@ Read the file that matches the task — do not load them all.
 | `references/result-codes.md` | Full result-code taxonomy with regex patterns and required action |
 | `references/widget.md` | COPYandPAY widget integration and `wpwlOptions` JS API |
 | `references/testing.md` | Test cards, `testMode`, 3DS test scenarios |
-| `references/payment-methods.md` | Brand capability matrix (VISA, MADA, APPLEPAY, GCC brands) |
+| `references/payment-methods.md` | Brand capability matrix (VISA, MADA, APPLEPAY, GCC brands, BNPL: VALU / POSTPAY) |
 | `references/doc-index.md` | Canonical URL map of all 94 docs pages + scraping notes, for anything not covered above |
 
 ## Endpoint map

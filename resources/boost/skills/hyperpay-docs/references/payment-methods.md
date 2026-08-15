@@ -30,6 +30,38 @@ Availability is per-acquirer, not just per-brand — the live table lists which 
 brand (Al Rajhi Bank ARB Gateway, MPGS, VPC/VISA, N-Genius, …). Confirm with your acquirer before
 relying on an operation.
 
+## BNPL / installments (MEASA)
+
+| Brand | Type | Flow | Supported operations | Countries listed |
+|-------|------|------|----------------------|------------------|
+| `VALU` | Virtual | **Async** | Debit, refund (partial/multiple/full) | none listed in the table |
+| `POSTPAY` | BNPL Pay in 4 | Sync | Debit, refund (partial/multiple/full) | Saudi Arabia |
+
+`VALU` (valU) is a Buy Now, Pay Later method: the shopper finances the purchase in installments at
+checkout. Per the brand table it is **debit-only** — no `PA`/`CP`, so no pre-auth-then-capture flow.
+Refund (`RF`) is the only reversal path; `RV` is not offered.
+
+Because `VALU` is **Async**, the integration is the redirect flow, not a synchronous S2S response:
+
+- `shopperResultUrl` is required on the `POST /v1/checkouts` (or `POST /v1/payments`) call.
+- The API call returns `000.200.000` / a pending `100.400.500`-style code, **not** a final result.
+  Never treat the initial response as success.
+- Final state arrives when the shopper returns (`resourcePath` → `GET .../payment`) **and** via
+  webhook. Webhooks are the reliable source — the shopper may abandon the return redirect.
+- Widget: add it to `data-brands` (`data-brands="VISA MASTER VALU"`); it renders as its own tab.
+
+The docs table lists no country and no provider for `VALU` — availability is acquirer-gated, so
+confirm enablement on your `entityId` with HyperPay before wiring it up. valU is an Egypt-market
+BNPL provider; a KSA-only entity will not have it.
+
+Tabby and Tamara are **not** brands in this table. They appear only on the *Payment Providers* tab,
+under the `Hyperpay` provider row (Saudi Arabia, UAE) alongside "available upon request (APMs) /
+(Cards)". Ask HyperPay for the brand identifiers if you need them.
+
+Non-MEASA BNPL brands also exist in the table (`AFFIRM`, `AFTERPAY`, `AFTERPAY_PACIFIC`, `CLEARPAY`,
+`KLARNA_PAYMENTS_*`, `FACILYPAY_*`, `ONEY`, `ZINIA_*`, `SANTANDER_*`, `RATENKAUF`, `CEMBRAPAY`,
+`MSTART`, `Humm_Loan`) — irrelevant to Gulf/Egypt entities.
+
 ## Full `paymentBrand` value list
 
 ```
@@ -42,4 +74,5 @@ STAPLES TARJETASHOPPING TCARD TCARDDEBIT TRADE_UK UNIONPAY VENMO_PAYFAST VISADEB
 ```
 
 This is the brand list offered on the server-to-server payment sample; the full catalogue on the
-payment-methods page is larger and includes async local methods.
+payment-methods page is larger and includes async local methods — `VALU` is one of them, and it is
+absent from this list even though it is a valid `paymentBrand`.
