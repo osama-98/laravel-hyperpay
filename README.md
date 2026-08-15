@@ -1,3 +1,7 @@
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/osama-98/laravel-hyperpay.svg?style=flat-square)](https://packagist.org/packages/osama-98/laravel-hyperpay)
+[![Total Downloads](https://img.shields.io/packagist/dt/osama-98/laravel-hyperpay.svg)](https://packagist.org/packages/osama-98/laravel-hyperpay)
+[![License](https://img.shields.io/packagist/l/osama-98/laravel-hyperpay.svg?style=flat-square)](https://packagist.org/packages/osama-98/laravel-hyperpay)
+
 # Laravel HyperPay
 
 HyperPay (OPPWA) knowledge for AI agents working in Laravel applications.
