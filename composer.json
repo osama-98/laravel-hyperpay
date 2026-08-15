@@ -1,0 +1,40 @@
+{
+    "name": "osama-98/laravel-hyperpay",
+    "description": "HyperPay (OPPWA) knowledge for Laravel AI agents: Boost guidelines and skills covering checkout, registration tokens, merchant-initiated charges, webhooks and result codes.",
+    "keywords": [
+        "laravel",
+        "hyperpay",
+        "oppwa",
+        "payments",
+        "copyandpay",
+        "laravel-boost",
+        "ai",
+        "skills"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Osama Sadah",
+            "email": "osama.sada98@gmail.com"
+        }
+    ],
+    "homepage": "https://github.com/osama-98/laravel-hyperpay",
+    "support": {
+        "issues": "https://github.com/osama-98/laravel-hyperpay/issues",
+        "source": "https://github.com/osama-98/laravel-hyperpay"
+    },
+    "require": {
+        "php": "^8.2"
+    },
+    "require-dev": {
+        "laravel/boost": "^1.0"
+    },
+    "suggest": {
+        "laravel/boost": "Discovers and installs the guidelines and skills shipped by this package."
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "config": {
+        "sort-packages": true
+    }
+}
